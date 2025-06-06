@@ -1,3 +1,10 @@
-opencv-python
-mediapipe
-pynput
+# Hand Gesture Mouse Control - Requirements
+# Computer Vision and Hand Tracking
+opencv-python>=4.5.0
+mediapipe>=0.8.0
+
+# Mouse Control
+pynput>=1.7.0
+
+# GUI (usually included with Python but sometimes missing)
+# tkinter is typically included with Python installations

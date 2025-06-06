@@ -1,9 +1,15 @@
 import mediapipe as mp
 import cv2
 import math
+import config
 
 class HandTracker:
-    def __init__(self, max_hands=1, min_detection_confidence=0.7, min_tracking_confidence=0.5):
+    def __init__(self, max_hands=None, min_detection_confidence=None, min_tracking_confidence=None):
+        # Use config values as defaults
+        max_hands = max_hands or config.MAX_NUM_HANDS
+        min_detection_confidence = min_detection_confidence or config.MIN_DETECTION_CONFIDENCE
+        min_tracking_confidence = min_tracking_confidence or config.MIN_TRACKING_CONFIDENCE
+        
         self.mp_hands = mp.solutions.hands
         self.hands = self.mp_hands.Hands(
             max_num_hands=max_hands,

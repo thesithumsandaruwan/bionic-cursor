@@ -1,5 +1,6 @@
 import time
 import math
+import config
 from mouse_controller import MouseController # Assuming mouse_controller.py is in the same directory
 import mediapipe as mp # For HandLandmark enum
 
@@ -15,12 +16,6 @@ GESTURE_SCROLL_READY = "scroll_ready"
 GESTURE_SCROLL_UP_ACTION = "scroll_up_action"
 GESTURE_SCROLL_DOWN_ACTION = "scroll_down_action"
 
-# Timing constants for debouncing and actions
-CLICK_DEBOUNCE_TIME = 0.3 # seconds to wait before recognizing another click
-SCROLL_DEBOUNCE_TIME = 0.3
-IDLE_TIMEOUT = 1.0 # seconds of no specific gesture before returning to idle/move
-MIN_MOVEMENT_FOR_CURSOR = 0.01 # Minimum normalized movement to be considered cursor move vs idle
-
 class GestureRecognizer:
     def __init__(self, mouse_controller: MouseController, hand_tracker):
         self.mouse_controller = mouse_controller
@@ -35,13 +30,16 @@ class GestureRecognizer:
         self.prev_hand_center_x = None
         self.prev_hand_center_y = None
 
-        # Click thresholds (normalized distance)
-        self.pinch_threshold_click = 0.06 # Adjust based on testing
-        self.scroll_pinch_threshold = 0.07
+        # Load thresholds from config
+        self.pinch_threshold_click = config.PINCH_THRESHOLD_CLICK
+        self.scroll_pinch_threshold = config.SCROLL_PINCH_THRESHOLD
+        self.scroll_sensitivity = config.SCROLL_SENSITIVITY
+        self.click_debounce_time = config.CLICK_DEBOUNCE_TIME
+        self.scroll_debounce_time = config.SCROLL_DEBOUNCE_TIME
+        self.idle_timeout = config.IDLE_TIMEOUT
 
         # Scroll gesture parameters
         self.scroll_ref_y = None # Y-coordinate of pinky base when scroll gesture starts
-        self.scroll_sensitivity = 0.1 # Normalized Y change for one scroll step
 
     def _calculate_hand_center(self, lm_list):
         if not lm_list or len(lm_list) < 21:
@@ -61,7 +59,7 @@ class GestureRecognizer:
         """
         if not lm_list or len(lm_list) < 21:
             # No hand detected or insufficient landmarks, revert to idle or do nothing
-            if self.current_gesture != GESTURE_IDLE and (time.time() - self.last_gesture_time > IDLE_TIMEOUT):
+            if self.current_gesture != GESTURE_IDLE and (time.time() - self.last_gesture_time > self.idle_timeout):
                 print("No hand, transitioning to IDLE")
                 self.current_gesture = GESTURE_IDLE
             return self.current_gesture
@@ -82,7 +80,7 @@ class GestureRecognizer:
         action_performed_this_frame = False
 
         # 1. Left Click: Index finger and Thumb pinch
-        if dist_thumb_index < self.pinch_threshold_click and (now - self.last_click_time > CLICK_DEBOUNCE_TIME):
+        if dist_thumb_index < self.pinch_threshold_click and (now - self.last_click_time > self.click_debounce_time):
             if fingers[1] and not fingers[2] and not fingers[3] and not fingers[4]: # Index up, others down (approx)
                 self.mouse_controller.left_click()
                 self.last_click_time = now
@@ -91,7 +89,7 @@ class GestureRecognizer:
                 action_performed_this_frame = True
         
         # 2. Right Click: Middle finger and Thumb pinch
-        elif dist_thumb_middle < self.pinch_threshold_click and (now - self.last_click_time > CLICK_DEBOUNCE_TIME):
+        elif dist_thumb_middle < self.pinch_threshold_click and (now - self.last_click_time > self.click_debounce_time):
             if fingers[2] and not fingers[1] and not fingers[3] and not fingers[4]: # Middle up, others down (approx)
                 self.mouse_controller.right_click()
                 self.last_click_time = now
@@ -101,7 +99,7 @@ class GestureRecognizer:
 
         # 3. Scroll Mode: Pinky and Thumb pinch (or specific finger pose)
         # Let's use: Pinky up, other three main fingers down, thumb can be anywhere (or also down)
-        elif fingers[4] and not fingers[1] and not fingers[2] and not fingers[3] and (now - self.last_scroll_time > SCROLL_DEBOUNCE_TIME):
+        elif fingers[4] and not fingers[1] and not fingers[2] and not fingers[3] and (now - self.last_scroll_time > self.scroll_debounce_time):
             if self.current_gesture != GESTURE_SCROLL_READY and self.current_gesture != GESTURE_SCROLL_UP_ACTION and self.current_gesture != GESTURE_SCROLL_DOWN_ACTION:
                 self.current_gesture = GESTURE_SCROLL_READY
                 self.scroll_ref_y = lm_list[self.mp_hands.HandLandmark.PINKY_TIP][2] # Pinky tip Y as reference
@@ -151,7 +149,7 @@ class GestureRecognizer:
         # If no specific action was performed, but hand is present, consider it MOVE or IDLE based on last state
         if not action_performed_this_frame and (self.current_gesture not in [GESTURE_MOVE, GESTURE_IDLE]):
             # If it was a click or scroll, and now it's not, transition to move/idle
-            if (now - self.last_gesture_time > IDLE_TIMEOUT / 2): # Quicker transition after action
+            if (now - self.last_gesture_time > self.idle_timeout / 2): # Quicker transition after action
                 # Default to move if hand is generally open-ish
                 if fingers[1]: # If index is up, assume move intent
                     self.current_gesture = GESTURE_MOVE
