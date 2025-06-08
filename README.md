@@ -17,7 +17,7 @@ This application uses your webcam to track your hand movements in real-time and 
 
 - **🖱️ Move cursor**: Point with your index finger (L-shape gesture)
 - **👆 Left click**: Pinch your thumb and index finger together
-- **🖕 Right click**: Pinch your thumb and middle finger together  
+- **🖕 Right click**: Pinch your thumb and ring finger together (index & middle up)
 - **📜 Scroll**: Raise your pinky finger and move it up or down
 - **✋ Idle**: Open palm (all fingers extended) to pause control
 
