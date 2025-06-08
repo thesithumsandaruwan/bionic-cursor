@@ -9,5 +9,8 @@ pynput>=1.7.0
 # GUI Components
 Pillow>=8.0.0
 
+# System Tray Support (optional)
+pystray>=0.19.0
+
 # GUI (usually included with Python but sometimes missing)
 # tkinter is typically included with Python installations
