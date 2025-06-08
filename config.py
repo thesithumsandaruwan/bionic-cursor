@@ -11,15 +11,15 @@ MIN_TRACKING_CONFIDENCE = 0.5
 MAX_NUM_HANDS = 1
 
 # Gesture recognition thresholds
-PINCH_THRESHOLD_CLICK = 0.06
+PINCH_THRESHOLD_CLICK = 0.04  # Reduced for more sensitive click detection
 SCROLL_PINCH_THRESHOLD = 0.07
-SCROLL_SENSITIVITY = 0.1
+SCROLL_SENSITIVITY = 0.05  # Reduced for more responsive scrolling
 
 # Timing settings (in seconds)
-CLICK_DEBOUNCE_TIME = 0.3
-SCROLL_DEBOUNCE_TIME = 0.2
-IDLE_TIMEOUT = 1.0
-MIN_MOVEMENT_FOR_CURSOR = 0.01
+CLICK_DEBOUNCE_TIME = 0.5  # Increased to prevent accidental double clicks
+SCROLL_DEBOUNCE_TIME = 0.1  # Reduced for smoother scrolling
+IDLE_TIMEOUT = 0.5  # Reduced for faster state transitions
+MIN_MOVEMENT_FOR_CURSOR = 0.005  # Reduced threshold for movement detection
 
 # UI settings
 SHOW_INSTRUCTIONS = True
