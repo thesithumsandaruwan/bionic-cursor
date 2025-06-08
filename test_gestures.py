@@ -17,10 +17,11 @@ def print_gesture_instructions():
     print("="*60)
     print("\nTest each gesture in this order:")
     print("1. IDLE: Show open palm (all fingers extended)")
-    print("2. MOVE: Point with index finger (L-shape with thumb)")
-    print("3. LEFT CLICK: Pinch thumb and index finger together")
-    print("4. RIGHT CLICK: Pinch thumb and ring finger (index & middle up)")
-    print("5. SCROLL: Only pinky up, move up/down")
+    print("2. MOVE: Show any hand position (uses whole hand center)")
+    print("3. LEFT CLICK: Quick thumb + index finger pinch")
+    print("4. DRAG: Hold thumb + index finger pinch and move hand")
+    print("5. RIGHT CLICK: Touch index and middle fingertips together")
+    print("6. SCROLL: Only pinky up, move up/down")
     print("\nPress 'q' to quit, 'r' to reset gesture state")
     print("Press 'h' to show these instructions again")
     print("="*60)
@@ -60,6 +61,11 @@ def display_detailed_info(image, gesture_recognizer, hand_tracker, lm_list, fing
                     cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 0), 2)
         y_offset += 30
     
+    if gesture_info['is_dragging']:
+        cv2.putText(image, "DRAGGING ACTIVE", (10, y_offset), 
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 0, 255), 2)
+        y_offset += 30
+    
     # Display distances for debugging
     if lm_list:
         import mediapipe as mp
@@ -67,12 +73,12 @@ def display_detailed_info(image, gesture_recognizer, hand_tracker, lm_list, fing
         
         dist_thumb_index = hand_tracker.calculate_distance(
             lm_list, mp_hands.HandLandmark.THUMB_TIP, mp_hands.HandLandmark.INDEX_FINGER_TIP)
-        dist_thumb_ring = hand_tracker.calculate_distance(
-            lm_list, mp_hands.HandLandmark.THUMB_TIP, mp_hands.HandLandmark.RING_FINGER_TIP)
+        dist_index_middle = hand_tracker.calculate_distance(
+            lm_list, mp_hands.HandLandmark.INDEX_FINGER_TIP, mp_hands.HandLandmark.MIDDLE_FINGER_TIP)
         
         cv2.putText(image, f"Thumb-Index: {dist_thumb_index:.3f}", 
                     (w-200, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
-        cv2.putText(image, f"Thumb-Ring: {dist_thumb_ring:.3f}", 
+        cv2.putText(image, f"Index-Middle: {dist_index_middle:.3f}", 
                     (w-200, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
     
     return image

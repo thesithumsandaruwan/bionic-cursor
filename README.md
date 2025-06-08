@@ -15,9 +15,10 @@ A sophisticated computer vision application that lets you control your mouse cur
 
 This application uses your webcam to track your hand movements in real-time and translates them into precise mouse actions:
 
-- **🖱️ Move cursor**: Point with your index finger (L-shape gesture)
-- **👆 Left click**: Pinch your thumb and index finger together
-- **🖕 Right click**: Pinch your thumb and ring finger together (index & middle up)
+- **🖱️ Move cursor**: Move your whole hand to control the cursor naturally
+- **🎯 Drag & Drop**: Pinch thumb and index finger, hold and move to drag items
+- **👆 Left click**: Quick pinch of thumb and index finger together
+- **🖕 Right click**: Touch index and middle fingertips together
 - **📜 Scroll**: Raise your pinky finger and move it up or down
 - **✋ Idle**: Open palm (all fingers extended) to pause control
 
@@ -111,9 +112,10 @@ The application now includes advanced camera selection features:
 ### Gesture Reference
 | Gesture | Action | Description |
 |---------|--------|-------------|
-| 👉 **L-Shape** | Move Cursor | Extend thumb and index finger, move hand to control cursor |
-| 🤏 **Thumb + Index Pinch** | Left Click | Bring thumb and index fingertips together |
-| 🤌 **Thumb + Middle Pinch** | Right Click | Bring thumb and middle fingertips together |
+| 🖐️ **Whole Hand** | Move Cursor | Move your entire hand to control cursor naturally |
+| 🎯 **Hold Pinch + Move** | Drag & Drop | Pinch thumb + index, hold and move to drag items |
+| 🤏 **Quick Thumb + Index Pinch** | Left Click | Quick pinch of thumb and index fingertips |
+| 🤞 **Index + Middle Touch** | Right Click | Touch index and middle fingertips together |
 | 🖐️ **Pinky Up** | Scroll Mode | Raise only pinky finger, then move up/down to scroll |
 | ✋ **Open Palm** | Idle State | Extend all fingers to pause mouse control |
 

@@ -84,6 +84,16 @@ class MouseController:
         self.mouse.release(Button.left)
         print("Mouse Action: Left Click")
 
+    def press_left_click(self):
+        """Press and hold left mouse button for dragging"""
+        self.mouse.press(Button.left)
+        print("Mouse Action: Left Press (Drag Start)")
+
+    def release_left_click(self):
+        """Release left mouse button to end dragging"""
+        self.mouse.release(Button.left)
+        print("Mouse Action: Left Release (Drag End)")
+
     def right_click(self):
         self.mouse.press(Button.right)
         self.mouse.release(Button.right)

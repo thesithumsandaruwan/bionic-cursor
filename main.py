@@ -4,7 +4,7 @@ import config
 import os
 
 from hand_tracker import HandTracker
-from gesture_recognizer import GestureRecognizer, GESTURE_IDLE, GESTURE_MOVE # Import states
+from gesture_recognizer import GestureRecognizer, GESTURE_IDLE, GESTURE_MOVE, GESTURE_DRAG # Import states
 from mouse_controller import MouseController
 from ui_manager import UIManager, CameraManager
 

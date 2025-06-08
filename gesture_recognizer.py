@@ -8,6 +8,7 @@ import mediapipe as mp # For HandLandmark enum
 GESTURE_NONE = "none"
 GESTURE_IDLE = "idle" # Resting hand
 GESTURE_MOVE = "move" # Hand moving the cursor
+GESTURE_DRAG = "drag" # Dragging while pinching
 GESTURE_LEFT_CLICK_READY = "left_click_ready" # Poised for left click
 GESTURE_LEFT_CLICK_ACTION = "left_click_action"
 GESTURE_RIGHT_CLICK_READY = "right_click_ready" # Poised for right click
@@ -41,6 +42,10 @@ class GestureRecognizer:
         self.right_click_prepared = False
         self.left_click_start_time = 0
         self.right_click_start_time = 0
+        
+        # Drag state tracking
+        self.is_dragging = False
+        self.drag_start_time = 0
 
         # Load thresholds from config
         self.pinch_threshold_click = config.PINCH_THRESHOLD_CLICK
@@ -89,11 +94,17 @@ class GestureRecognizer:
     def recognize(self, lm_list, frame_width, frame_height):
         """
         Recognizes gestures from hand landmarks and controls the mouse.
+        Uses whole hand position for movement instead of just index finger.
         lm_list: List of landmark coordinates [id, x, y, z].
         frame_width, frame_height: Dimensions of the camera frame.
         """
         if not lm_list or len(lm_list) < 21:
             # No hand detected or insufficient landmarks
+            if self.is_dragging:
+                # Release drag if hand disappears
+                self.mouse_controller.release_left_click()
+                self.is_dragging = False
+                print("Drag released - hand lost")
             if self.current_gesture != GESTURE_IDLE:
                 self.current_gesture = GESTURE_IDLE
                 self.in_scroll_mode = False
@@ -111,30 +122,65 @@ class GestureRecognizer:
             self.mp_hands.HandLandmark.THUMB_TIP, 
             self.mp_hands.HandLandmark.INDEX_FINGER_TIP
         )
-        dist_thumb_ring = self.hand_tracker.calculate_distance(
+        dist_index_middle = self.hand_tracker.calculate_distance(
             lm_list, 
-            self.mp_hands.HandLandmark.THUMB_TIP, 
-            self.mp_hands.HandLandmark.RING_FINGER_TIP
+            self.mp_hands.HandLandmark.INDEX_FINGER_TIP, 
+            self.mp_hands.HandLandmark.MIDDLE_FINGER_TIP
         )
+        
+        # Get hand center for movement (using wrist and middle finger MCP)
+        hand_center_x, hand_center_y = self._calculate_hand_center(lm_list)
         
         # --- Gesture Priority Logic ---
         
         # 1. IDLE STATE: All fingers up (open palm) - highest priority for safety
         if all(fingers):
+            if self.is_dragging:
+                self.mouse_controller.release_left_click()
+                self.is_dragging = False
+                print("Drag released - open palm")
             if self.current_gesture != GESTURE_IDLE:
                 self.current_gesture = GESTURE_IDLE
                 self.in_scroll_mode = False
                 print("Gesture: IDLE (Open Palm)")
             return self.current_gesture
         
-        # 2. LEFT CLICK: Thumb and index pinch (other fingers can be up or down)
+        # 2. DRAG MODE: Thumb and index pinch while moving hand
         if dist_thumb_index < self.pinch_threshold_click:
+            if not self.is_dragging:
+                # Start dragging
+                self.mouse_controller.press_left_click()
+                self.is_dragging = True
+                self.drag_start_time = now
+                self.current_gesture = GESTURE_DRAG
+                print(f"Gesture: DRAG STARTED (Distance: {dist_thumb_index:.3f})")
+            
+            # Continue dragging - move mouse based on hand center
+            if hand_center_x is not None and hand_center_y is not None:
+                # Apply smoothing
+                smooth_x, smooth_y = self._smooth_cursor_movement(hand_center_x, hand_center_y)
+                # Move mouse with smoothed coordinates
+                self.mouse_controller.move_mouse(smooth_x, smooth_y, frame_width, frame_height)
+                self.current_gesture = GESTURE_DRAG
+                
+            return self.current_gesture
+        else:
+            # Release drag if pinch is released
+            if self.is_dragging:
+                self.mouse_controller.release_left_click()
+                self.is_dragging = False
+                print("Gesture: DRAG RELEASED")
+        
+        # 3. LEFT CLICK: Quick thumb and index pinch (if not dragging)
+        if (dist_thumb_index < self.pinch_threshold_click and 
+            not self.is_dragging):
             if not self.left_click_prepared:
                 self.left_click_prepared = True
                 self.left_click_start_time = now
                 self.current_gesture = GESTURE_LEFT_CLICK_READY
                 print(f"Gesture: Left Click Ready (Distance: {dist_thumb_index:.3f})")
-            elif (now - self.left_click_start_time > self.gesture_hold_time and 
+            elif (now - self.left_click_start_time > 0.05 and  # Shorter hold time for quick clicks
+                  now - self.left_click_start_time < 0.3 and   # But not too long (that becomes drag)
                   now - self.last_click_time > self.click_debounce_time):
                 self.mouse_controller.left_click()
                 self.last_click_time = now
@@ -145,14 +191,13 @@ class GestureRecognizer:
         else:
             self.left_click_prepared = False
         
-        # 3. RIGHT CLICK: Thumb and ring finger pinch (index and middle should be up)
-        if (dist_thumb_ring < self.pinch_threshold_click and 
-            fingers[1] and fingers[2]):  # Index and middle fingers should be up for right click
+        # 4. RIGHT CLICK: Index and middle finger touch
+        if dist_index_middle < self.pinch_threshold_click:
             if not self.right_click_prepared:
                 self.right_click_prepared = True
                 self.right_click_start_time = now
                 self.current_gesture = GESTURE_RIGHT_CLICK_READY
-                print(f"Gesture: Right Click Ready (Distance: {dist_thumb_ring:.3f})")
+                print(f"Gesture: Right Click Ready (Distance: {dist_index_middle:.3f})")
             elif (now - self.right_click_start_time > self.gesture_hold_time and 
                   now - self.last_click_time > self.click_debounce_time):
                 self.mouse_controller.right_click()
@@ -164,7 +209,7 @@ class GestureRecognizer:
         else:
             self.right_click_prepared = False
         
-        # 4. SCROLL MODE: Only pinky up, all others down
+        # 5. SCROLL MODE: Only pinky up, all others down
         if (fingers[4] and not fingers[1] and not fingers[2] and not fingers[3]):
             if not self.in_scroll_mode:
                 self.in_scroll_mode = True
@@ -194,14 +239,10 @@ class GestureRecognizer:
         else:
             self.in_scroll_mode = False
         
-        # 5. MOUSE MOVEMENT: Index finger up (L-shape with thumb) or just index up
-        if fingers[1]:  # Index finger is up
-            # Use index finger tip for cursor control
-            cursor_x_norm = lm_list[self.mp_hands.HandLandmark.INDEX_FINGER_TIP][1]
-            cursor_y_norm = lm_list[self.mp_hands.HandLandmark.INDEX_FINGER_TIP][2]
-            
+        # 6. MOUSE MOVEMENT: Default movement using hand center
+        if hand_center_x is not None and hand_center_y is not None:
             # Apply smoothing
-            smooth_x, smooth_y = self._smooth_cursor_movement(cursor_x_norm, cursor_y_norm)
+            smooth_x, smooth_y = self._smooth_cursor_movement(hand_center_x, hand_center_y)
             
             # Move mouse with smoothed coordinates
             self.mouse_controller.move_mouse(smooth_x, smooth_y, frame_width, frame_height)
@@ -209,14 +250,10 @@ class GestureRecognizer:
             # Uncomment for debugging: print(f"Gesture: MOVE (Smooth: {smooth_x:.3f}, {smooth_y:.3f})")
             return self.current_gesture
         
-        # 6. DEFAULT: If no specific gesture detected, remain in current state or go idle
+        # 7. DEFAULT: If no specific gesture detected, remain in current state or go idle
         if self.current_gesture not in [GESTURE_IDLE, GESTURE_MOVE]:
-            # Transition from action states back to move or idle
-            if fingers[1]:  # If index is still up, go to move
-                self.current_gesture = GESTURE_MOVE
-            else:
-                self.current_gesture = GESTURE_IDLE
-                print("Gesture: Transitioning to IDLE")
+            self.current_gesture = GESTURE_IDLE
+            print("Gesture: Transitioning to IDLE")
         
         self.last_gesture_time = now
         return self.current_gesture
@@ -228,15 +265,19 @@ class GestureRecognizer:
             'left_click_prepared': self.left_click_prepared,
             'right_click_prepared': self.right_click_prepared,
             'in_scroll_mode': self.in_scroll_mode,
+            'is_dragging': self.is_dragging,
             'smoothing_factor': self.smoothing_factor
         }
     
     def reset_gesture_state(self):
         """Reset all gesture states - useful for recalibration"""
+        if self.is_dragging:
+            self.mouse_controller.release_left_click()
         self.current_gesture = GESTURE_IDLE
         self.left_click_prepared = False
         self.right_click_prepared = False
         self.in_scroll_mode = False
+        self.is_dragging = False
         self.prev_cursor_x = None
         self.prev_cursor_y = None
         print("Gesture state reset to IDLE")
