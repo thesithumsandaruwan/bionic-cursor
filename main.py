@@ -1,11 +1,24 @@
 import cv2
 import time
 import config
+import os
 
 from hand_tracker import HandTracker
 from gesture_recognizer import GestureRecognizer, GESTURE_IDLE, GESTURE_MOVE # Import states
 from mouse_controller import MouseController
 from ui_manager import UIManager, CameraManager
+
+def load_selected_camera():
+    """Load previously selected camera from file"""
+    try:
+        if os.path.exists('selected_camera.txt'):
+            with open('selected_camera.txt', 'r') as f:
+                camera_index = int(f.read().strip())
+                print(f"Found saved camera selection: Camera {camera_index}")
+                return camera_index
+    except Exception as e:
+        print(f"Could not load saved camera selection: {e}")
+    return None
 
 def main():
     print("Starting Hand Gesture Mouse Control...")
@@ -15,11 +28,23 @@ def main():
     camera_manager = CameraManager()
     ui_manager = UIManager()
     
-    # Initialize camera
-    if not camera_manager.initialize_camera():
-        print("Error: Could not open any camera.")
-        print(f"Available cameras: {camera_manager.available_cameras}")
-        return
+    # Check for previously selected camera
+    selected_camera = load_selected_camera()
+    
+    # Initialize camera with selected camera or default
+    if selected_camera is not None:
+        if not camera_manager.initialize_camera(selected_camera):
+            print(f"Could not open selected camera {selected_camera}, trying default...")
+            if not camera_manager.initialize_camera():
+                print("Error: Could not open any camera.")
+                print(f"Available cameras: {camera_manager.available_cameras}")
+                return
+    else:
+        if not camera_manager.initialize_camera():
+            print("Error: Could not open any camera.")
+            print(f"Available cameras: {camera_manager.available_cameras}")
+            print("Try running launcher.py to select a camera first.")
+            return
 
     camera_info = camera_manager.get_camera_info()
     print(f"Using camera {camera_info['index']} ({camera_info['width']}x{camera_info['height']})")

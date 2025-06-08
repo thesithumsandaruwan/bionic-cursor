@@ -53,11 +53,16 @@ The system features intelligent gesture recognition with configurable sensitivit
 
 ## 🔧 Quick Start
 
-### Option 1: Easy Launch (Windows)
+### Option 1: Enhanced Launch with Camera Selection (Windows)
+1. **Download/Clone** the repository
+2. **Double-click** `run_with_camera_selector.bat` - it will help you select the best camera and then start the application
+3. **Alternative**: Use `run_gui.bat` for a graphical camera selector with live preview
+
+### Option 2: Easy Launch (Windows)
 1. **Download/Clone** the repository
 2. **Double-click** `run.bat` - it will automatically install dependencies and start the application
 
-### Option 2: Manual Installation
+### Option 3: Manual Installation
 1. **Clone the repository**
    ```bash
    git clone https://github.com/yourusername/hand-gesture-mouse-control.git
@@ -73,6 +78,27 @@ The system features intelligent gesture recognition with configurable sensitivit
    ```bash
    python main.py
    ```
+
+## 📹 Camera Selection
+
+The application now includes advanced camera selection features:
+
+### Automatic Camera Selection
+- **GUI Selector**: Run `run_gui.bat` for a user-friendly interface with live camera preview
+- **Console Selector**: Run `select_camera.bat` for a text-based camera selection
+- **Integrated Launcher**: Use `run_with_camera_selector.bat` for the complete experience
+
+### Camera Selection Features
+- **Live Preview**: See exactly what each camera captures before selecting
+- **Multiple Camera Support**: Automatically detects all available cameras
+- **Resolution Display**: Shows camera resolution and capabilities
+- **Persistent Selection**: Remembers your camera choice for future sessions
+- **Fallback Options**: Gracefully handles camera connection issues
+
+### Standalone Camera Tools
+- **`camera_selector.py`**: Console-based camera selection tool
+- **`camera_selector_gui.py`**: GUI-based camera selector with live preview
+- **`launcher.py`**: Integrated launcher that combines camera selection with the main app
 
 ## 🎮 Usage Guide
 
@@ -119,16 +145,25 @@ CAMERA_HEIGHT = 480
 
 ```
 hand-gesture-mouse-control/
-├── main.py                 # Main application entry point
-├── hand_tracker.py         # Hand detection and landmark extraction  
-├── gesture_recognizer.py   # Gesture interpretation and mouse control
-├── mouse_controller.py     # Mouse action implementation
-├── ui_manager.py          # User interface and visual feedback
-├── config.py              # Configuration settings
-├── requirements.txt       # Python dependencies
-├── run.bat               # Windows launcher script
-├── README.md             # This file
-└── TROUBLESHOOTING.md    # Common issues and solutions
+├── main.py                      # Main application entry point
+├── hand_tracker.py              # Hand detection and landmark extraction  
+├── gesture_recognizer.py        # Gesture interpretation and mouse control
+├── mouse_controller.py          # Mouse action implementation
+├── ui_manager.py               # User interface and visual feedback
+├── config.py                   # Configuration settings
+├── camera_selector.py          # Console-based camera selection
+├── camera_selector_gui.py      # GUI-based camera selector with preview
+├── launcher.py                 # Integrated launcher with camera selection
+├── requirements.txt            # Python dependencies
+├── run.bat                     # Basic Windows launcher script
+├── run_gui.bat                 # GUI launcher with camera selection
+├── run_with_camera_selector.bat # Enhanced launcher with camera selection
+├── select_camera.bat           # Standalone camera selector
+├── setup_and_run.bat          # Installation verification script
+├── test_components.py         # Component testing utilities
+├── README.md                  # This file
+├── TROUBLESHOOTING.md         # Common issues and solutions
+└── PROJECT_SUMMARY.md         # Detailed project overview
 ```
 
 ## 🚀 Advanced Features
